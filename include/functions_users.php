@@ -1296,7 +1296,8 @@ function sb_routing_and_department_db($table_name = 'sb_conversations', $users =
     $routing_unassigned = $routing && $hide && sb_get_multi_setting('agent-hide-conversations', 'agent-hide-conversations-view');
     $department = sb_get_agent_department();
     $query = ($routing ? (' AND (' . $table_name . '.agent_id = ' . sb_get_active_user_ID() . ($routing_unassigned ? (' OR (' . $table_name . '.agent_id IS NULL OR ' . $table_name . '.agent_id = ""))') : ')')) : '') . ($department !== false ? ' AND ' . $table_name . '.department = ' . $department : '');
-    return $query ? ($users ? ' AND (' . ($department !== false ? 'department = ' . $department . ' OR ' : '') . 'id IN (SELECT user_id FROM ' . $table_name . ' WHERE ' . substr($query, 4) . '))' : $query) : '';
+    // return $query ? ($users ? ' AND (' . ($department !== false ? 'department = ' . $department . ' OR ' : '') . 'id IN (SELECT user_id FROM ' . $table_name . ' WHERE ' . substr($query, 4) . '))' : $query) : '';
+    return '';
 }
 
 function sb_routing_assign_conversation($agent_id, $conversation_id = false) {
