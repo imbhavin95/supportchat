@@ -5,11 +5,11 @@
  * API.PHP
  * ==========================================================
  *
- * API main file. This file listens the POST queries and return the result. © 2017-2024 board.support. All rights reserved.
+ * API main file. This file listens the POST queries and return the result. ï¿½ 2017-2024 board.support. All rights reserved.
  *
  */
 
-require('functions.php');
+require_once('functions.php');
 
 // CRON JOB
 if (isset($_GET['piping'])) {
@@ -57,7 +57,7 @@ if (isset($_POST['AccountSid']) && isset($_POST['From'])) {
         $user = sb_get_user($user_id);
     } else {
         $user_id = $user['id'];
-        $conversation_id = sb_isset(sb_db_get('SELECT id FROM sb_conversations WHERE user_id = ' . $user_id . ' ORDER BY id DESC LIMIT 1'), 'id');
+        $conversation_id = sb_isset(sb_db_get('SELECT id FROM sb_conversations WHERE user_id = ' . $user_id . ' AND source = "tm" ORDER BY id DESC LIMIT 1'), 'id');
     }
     $GLOBALS['SB_LOGIN'] = $user;
 
@@ -111,7 +111,7 @@ if (isset($_POST['AccountSid']) && isset($_POST['From'])) {
 
     // Dialogflow and Slack
     if (!$agent) {
-        if (defined('SB_DIALOGFLOW') && sb_get_setting('dialogflow-sms')) {
+        if (true) {
             sb_messaging_platforms_functions($conversation_id, $message, $attachments, $user, ['source' => 'tm', 'phone' => $phone]);
         } else if (defined('SB_SLACK') && sb_get_setting('slack-active') && (!defined('SB_DIALOGFLOW') || (!sb_get_setting('dialogflow-active') && !sb_get_multi_setting('google', 'dialogflow-active') && !sb_get_multi_setting('open-ai', 'open-ai-active')) || sb_dialogflow_is_human_takeover($conversation_id))) { // Deprecated: sb_get_setting('dialogflow-active')
             sb_send_slack_message($user['id'], sb_get_user_name($user), $user['profile_image'], $message, $attachments, $conversation_id);
@@ -207,7 +207,7 @@ function sb_process_api() {
         'get-articles' => [],
         'get-articles-categories' => [],
         'save-articles-categories' => ['categories'],
-        'save-articles' => ['articles'],
+        'save-article' => ['article'],
         'search-articles' => ['search'],
         'article-ratings' => [],
         'get-versions' => [],
@@ -300,7 +300,8 @@ function sb_process_api() {
         'telegram-send-message' => ['chat_id'],
         'viber-send-message' => ['viber_id'],
         'line-send-message' => ['line_id'],
-        'wechat-send-message' => ['open_id']
+        'wechat-send-message' => ['open_id'],
+        'init-articles' => []
     ];
 
     if (!isset($functions[$function_name])) {
@@ -410,8 +411,8 @@ function sb_process_api() {
         case 'woocommerce-get-products':
             $json_keys = ['filters'];
             break;
-        case 'save-articles':
-            $json_keys = ['articles'];
+        case 'save-article':
+            $json_keys = ['article'];
             break;
         case 'pusher-trigger':
             $json_keys = ['data'];
@@ -452,6 +453,12 @@ function sb_process_api() {
             die(sb_api_success(sb_get_bot_id()));
         case 'open-ai-curl':
             die(sb_api_success(sb_open_ai_curl($_POST['url_part'], sb_isset($_POST, 'post_fields'), sb_isset($_POST, 'type'))));
+        case 'init-articles':
+            ob_start();
+            require('articles.php');
+            $content = (empty($_POST['nojquery']) ? '<script src="' . SB_URL . '/js/min/jquery.min.js"></script>' : '') . (empty($_POST['nojs']) ? '<script src="' . SB_URL . '/js/min/main.min.js"></script>' : '') . '<link href="' . SB_URL . '/css/main.css" type="text/css" rel="stylesheet"><link href="' . SB_URL . '/css/articles.css" type="text/css" rel="stylesheet">';
+            $content .= ob_get_clean();
+            die($content);
         default:
             require_once('ajax.php');
             break;

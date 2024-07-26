@@ -56,6 +56,9 @@ function sb_ajax_execute() {
             }
         }
     }
+    if ($function == 'get-front-settings' && sb_get_setting('front-auto-translations') && sb_post('language') && sb_post('language')[0] != 'en') {
+        $GLOBALS['SB_LANGUAGE'] = [sb_get_user_language(), 'front'];
+    }
     switch ($function) {
         case 'get-user-by':
             return sb_json_response(sb_get_user_by($_POST['by'], $_POST['value']));
@@ -263,16 +266,18 @@ function sb_ajax_execute() {
             return sb_json_response(sb_set_rating($_POST['settings'], sb_post('payload'), sb_post('message_id'), sb_post('message')));
         case 'get-rating':
             return sb_json_response(sb_get_rating($_POST['user_id']));
-        case 'save-articles':
-            return sb_json_response(sb_save_articles(sb_post('articles', []), sb_post('categories'), sb_post('translations')));
+        case 'init-articles-admin':
+            return sb_json_response(sb_init_articles_admin());
+        case 'save-article':
+            return sb_json_response(sb_save_article($_POST['article']));
         case 'get-articles':
-            return sb_json_response(sb_get_articles(sb_post('id', -1), sb_post('count'), sb_post('full'), sb_post('categories'), sb_post('articles_language')));
+            return sb_json_response(sb_get_articles(sb_post('id'), sb_post('count'), sb_post('full'), sb_post('categories'), sb_post('language')));
         case 'get-articles-categories':
-            return sb_json_response(sb_get_articles_categories());
+            return sb_json_response(sb_get_articles_categories(sb_post('category_type')));
         case 'save-articles-categories':
             return sb_json_response(sb_save_articles_categories($_POST['categories']));
         case 'search-articles':
-            return sb_json_response(sb_search_articles($_POST['search'], sb_post('articles_language')));
+            return sb_json_response(sb_search_articles($_POST['search'], sb_post('language')));
         case 'article-ratings':
             return sb_json_response(sb_article_ratings($_POST['article_id'], sb_post('rating')));
         case 'installation':
@@ -536,6 +541,8 @@ function sb_ajax_execute() {
             return sb_json_response(sb_update_sw($_POST['url']));
         case 'data-scraping':
             return sb_json_response(sb_open_ai_data_scraping($_POST['conversation_id'], $_POST['prompt_id']));
+        case 'assign-conversations-active-agent':
+            return sb_json_response(sb_routing_assign_conversations_active_agent());
         default:
             return '["error", "Support Board Error [ajax.php]: No functions found with the given name."]';
     }
@@ -557,8 +564,8 @@ function sb_post($key, $default = false) {
 function sb_security($function) {
     $security = [
         'admin_db' => ['open-ai-source-file-to-paragraphs', 'save-settings', 'update-user', 'get-conversation'],
-        'admin' => ['update-sw', 'open-ai-delete-training', 'open-ai-embeddings-articles', 'open-ai-get-embeddings-delete', 'get-sitemap-urls', 'open-ai-source-file-to-paragraphs', 'open-ai-get-embeddings', 'get-user-by', 'get-agent-department', 'upload-path', 'get-multi-setting', 'save-external-setting', 'get-external-setting', 'update-bot', 'get-last-message', 'delete-attachments', 'open-ai-user-expressions-intents', 'slack-channels', 'twitter-subscribe', 'whatsapp-360-synchronization', 'telegram-synchronization', 'viber-synchronization', 'import-settings', 'export-settings', 'updates-available', 'automations-save', 'get-articles-categories', 'save-articles-categories', 'path', 'reports-export', 'reports', 'aecommerce-sync-admins', 'aecommerce-sync-sellers', 'aecommerce-sync', 'whmcs-sync', 'whmcs-articles-sync', 'perfex-articles-sync', 'perfex-sync', 'woocommerce-get-session', 'woocommerce-get-attributes', 'woocommerce-get-taxonomies', 'woocommerce-dialogflow-intents', 'woocommerce-dialogflow-entities', 'dialogflow-curl', 'delete-leads', 'system-requirements', 'save-settings', 'get-settings', 'get-all-settings', 'delete-user', 'delete-users', 'app-get-key', 'app-activation', 'app-disable', 'wp-sync'],
-        'agent' => ['data-scraping', 'opencart-order-details', 'opencart-panel', 'get-embeddings-database', 'embeddings-database', 'get-tags', 'add-user', 'get-html', 'envato', 'whatsapp-get-templates', 'automations-is-sent', 'logs', 'newsletter', 'get-last-agent-in-conversation', 'messaging-platforms-send-message', 'open-ai-user-expressions', 'whatsapp-send-template', 'martfury-sync', 'martfury-sync-sellers', 'martfury-get-conversation-details', 'zendesk-update-ticket', 'zendesk-create-ticket', 'zendesk-get-conversation-details', 'dialogflow-knowledge', 'on-close', 'check-conversations-assignment', 'delete-file', 'dialogflow-smart-reply', 'dialogflow-update-intent', 'dialogflow-get-intents', 'ump-get-conversation-details', 'armember-get-conversation-details', 'count-conversations', 'reports-update', 'get-agents-ids', 'send-custom-email', 'get-users-with-details', 'direct-message', 'messenger-send-message', 'wechat-send-message', 'whatsapp-send-message', 'telegram-send-message', 'viber-send-message', 'line-send-message', 'twitter-send-message', 'get-user-language', 'get-notes', 'add-note', 'update-note', 'delete-note', 'user-online', 'get-user-from-conversation', 'aecommerce-get-conversation-details', 'whmcs-get-conversation-details', 'woocommerce-get-order', 'woocommerce-coupon-delete-expired', 'woocommerce-coupon-check', 'woocommerce-coupon', 'woocommerce-is-in-stock', 'woocommerce-get-attribute-by-name', 'woocommerce-get-attribute-by-term', 'woocommerce-get-product-taxonomies', 'woocommerce-get-product-images', 'woocommerce-get-product-id-by-name', 'woocommerce-get-user-orders', 'woocommerce-get-product', 'woocommerce-get-customer', 'dialogflow-get-agent', 'dialogflow-get-entity', 'woocommerce-products-popup', 'woocommerce-search-products', 'woocommerce-get-products', 'woocommerce-get-data', 'is-agent-typing', 'close-message', 'count-users', 'get-users', 'get-new-users', 'get-online-users', 'search-users', 'get-conversations', 'get-new-conversations', 'search-conversations', 'csv-users', 'send-test-email', 'slack-users', 'clean-data', 'save-translations', 'dialogflow-intent', 'dialogflow-create-intent', 'dialogflow-entity', 'get-rating', 'save-articles', 'update', 'archive-slack-channels'],
+        'admin' => ['update-sw', 'open-ai-delete-training', 'open-ai-embeddings-articles', 'open-ai-get-embeddings-delete', 'get-sitemap-urls', 'open-ai-source-file-to-paragraphs', 'open-ai-get-embeddings', 'get-user-by', 'get-agent-department', 'upload-path', 'get-multi-setting', 'save-external-setting', 'get-external-setting', 'update-bot', 'get-last-message', 'delete-attachments', 'open-ai-user-expressions-intents', 'slack-channels', 'twitter-subscribe', 'whatsapp-360-synchronization', 'telegram-synchronization', 'viber-synchronization', 'import-settings', 'export-settings', 'updates-available', 'automations-save', 'path', 'reports-export', 'reports', 'aecommerce-sync-admins', 'aecommerce-sync-sellers', 'aecommerce-sync', 'whmcs-sync', 'whmcs-articles-sync', 'perfex-articles-sync', 'perfex-sync', 'woocommerce-get-session', 'woocommerce-get-attributes', 'woocommerce-get-taxonomies', 'woocommerce-dialogflow-intents', 'woocommerce-dialogflow-entities', 'dialogflow-curl', 'delete-leads', 'system-requirements', 'save-settings', 'get-settings', 'get-all-settings', 'delete-user', 'delete-users', 'app-get-key', 'app-activation', 'app-disable', 'wp-sync'],
+        'agent' => ['assign-conversations-active-agent', 'init-articles-admin', 'data-scraping', 'opencart-order-details', 'opencart-panel', 'get-embeddings-database', 'embeddings-database', 'get-tags', 'add-user', 'get-html', 'envato', 'whatsapp-get-templates', 'automations-is-sent', 'logs', 'newsletter', 'get-last-agent-in-conversation', 'messaging-platforms-send-message', 'open-ai-user-expressions', 'whatsapp-send-template', 'martfury-sync', 'martfury-sync-sellers', 'martfury-get-conversation-details', 'zendesk-update-ticket', 'zendesk-create-ticket', 'zendesk-get-conversation-details', 'dialogflow-knowledge', 'save-articles-categories', 'on-close', 'check-conversations-assignment', 'delete-file', 'dialogflow-smart-reply', 'dialogflow-update-intent', 'dialogflow-get-intents', 'ump-get-conversation-details', 'armember-get-conversation-details', 'count-conversations', 'reports-update', 'get-agents-ids', 'send-custom-email', 'get-users-with-details', 'direct-message', 'messenger-send-message', 'wechat-send-message', 'whatsapp-send-message', 'telegram-send-message', 'viber-send-message', 'line-send-message', 'twitter-send-message', 'get-user-language', 'get-notes', 'add-note', 'update-note', 'delete-note', 'user-online', 'get-user-from-conversation', 'aecommerce-get-conversation-details', 'whmcs-get-conversation-details', 'woocommerce-get-order', 'woocommerce-coupon-delete-expired', 'woocommerce-coupon-check', 'woocommerce-coupon', 'woocommerce-is-in-stock', 'woocommerce-get-attribute-by-name', 'woocommerce-get-attribute-by-term', 'woocommerce-get-product-taxonomies', 'woocommerce-get-product-images', 'woocommerce-get-product-id-by-name', 'woocommerce-get-user-orders', 'woocommerce-get-product', 'woocommerce-get-customer', 'dialogflow-get-agent', 'dialogflow-get-entity', 'woocommerce-products-popup', 'woocommerce-search-products', 'woocommerce-get-products', 'woocommerce-get-data', 'is-agent-typing', 'close-message', 'count-users', 'get-users', 'get-new-users', 'get-online-users', 'search-users', 'get-conversations', 'get-new-conversations', 'search-conversations', 'csv-users', 'send-test-email', 'slack-users', 'clean-data', 'save-translations', 'dialogflow-intent', 'dialogflow-create-intent', 'dialogflow-entity', 'get-rating', 'save-article', 'update', 'archive-slack-channels'],
         'user' => ['audio-to-text', 'update-tags', 'execute-bot-message', 'remove-email-cron', 'aws-s3', 'is-allowed-extension', 'translate-string', 'dialogflow-human-takeover', 'google-language-detection-update-user', 'google-translate', 'get-agents-in-conversation', 'update-conversation-agent', 'update-conversation-department', 'get-avatar', 'slack-presence', 'woocommerce-waiting-list', 'dialogflow-set-active-context', 'search-user-conversations', 'update-login', 'update-user', 'get-user', 'get-user-extra', 'update-user-to-lead', 'new-conversation', 'get-user-conversations', 'get-new-user-conversations', 'send-slack-message', 'slack-unarchive', 'update-message', 'delete-message', 'update-user-and-message', 'get-conversation', 'get-new-messages', 'set-rating', 'create-email', 'send-email']
     ];
     $user_id = sb_post('user_id', -1);

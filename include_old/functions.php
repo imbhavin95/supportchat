@@ -10,7 +10,7 @@ use Swoole\Http\Response;
  *
  */
 
-define('SB_VERSION', '3.7.1');
+define('SB_VERSION', '3.7.2');
 
 if (!defined('SB_PATH')) {
     $path = dirname(__DIR__, 1);
@@ -195,7 +195,7 @@ function sb_db_escape($value, $numeric = -1) {
 function sb_db_json_escape($array) {
     global $SB_CONNECTION;
     sb_db_connect();
-    $value = str_replace(['"false"', '"true"'], ['false', 'true'], json_encode($array, JSON_INVALID_UTF8_IGNORE));
+    $value = str_replace(['"false"', '"true"'], ['false', 'true'], json_encode($array, JSON_INVALID_UTF8_IGNORE, JSON_UNESCAPED_UNICODE));
     $value = sb_sanatize_string($value);
     return $SB_CONNECTION ? $SB_CONNECTION->real_escape_string($value) : $value;
 }
@@ -486,16 +486,16 @@ function sb_init_translations() {
                 return;
             }
         }
-        $admin = sb_is_agent();
-        $language = $admin ? sb_get_admin_language() : sb_get_user_language(sb_get_active_user_ID());
-        if (($language && $language != 'en') && ($admin || isset($_GET['lang']) || $is_init || (sb_get_setting('dialogflow-multilingual-translation') || sb_get_multi_setting('google', 'google-multilingual-translation')))) { // Deprecated: sb_get_setting('dialogflow-multilingual-translation')
+        $is_admin = sb_is_agent();
+        $language = $is_admin ? sb_get_admin_language() : sb_get_user_language(sb_get_active_user_ID());
+        if (($language && $language != 'en') && ($is_admin || isset($_GET['lang']) || $is_init || (sb_get_setting('dialogflow-multilingual-translation') || sb_get_multi_setting('google', 'google-multilingual-translation')))) { // Deprecated: sb_get_setting('dialogflow-multilingual-translation')
             switch ($language) {
                 case 'nn':
                 case 'nb':
                     $language = 'no';
                     break;
             }
-            $area = $admin ? 'admin' : 'front';
+            $area = $is_admin ? 'admin' : 'front';
             $path = SB_PATH . '/resources/languages/' . $area . '/' . $language . '.json';
             if (sb_is_cloud()) {
                 $cloud_path = SB_PATH . '/uploads/cloud/languages/' . sb_isset(sb_cloud_account(), 'user_id') . '/' . $area . '/' . $language . '.json';
@@ -690,13 +690,16 @@ function sb_app_get_key($app_name) {
 }
 
 function sb_app_activation($app_name, $key) {
+    $active_apps = sb_get_external_setting('active_apps', []);
+    array_push($active_apps, $app_name);
+    return sb_save_external_setting('active_apps', $active_apps);
     if (sb_is_cloud()) {
         $active_apps = sb_get_external_setting('active_apps', []);
         array_push($active_apps, $app_name);
         return sb_save_external_setting('active_apps', $active_apps);
     }
     $envato_code = sb_get_setting('envato-purchase-code');
-    if (!$envato_code) {
+    if ($envato_code) {
         return new SBValidationError('envato-purchase-code-not-found');
     }
     $key = trim($key);
@@ -815,15 +818,20 @@ function sb_updates_validation() {
 
     // Temp. Deprecated
     try {
-        sb_db_query('ALTER TABLE sb_conversations ADD COLUMN extra_3 varchar(191) AFTER extra_2');
+        if (!sb_is_debug()) {
+            sb_db_query('ALTER TABLE sb_conversations ADD COLUMN extra_3 varchar(191) AFTER extra_2');
+            sb_db_query('CREATE TABLE IF NOT EXISTS sb_articles (id INT NOT NULL AUTO_INCREMENT, title VARCHAR(191) NOT NULL, content TEXT NOT NULL, editor_js TEXT NOT NULL, nav TEXT, link VARCHAR(191), category VARCHAR(191), parent_category VARCHAR(191), language VARCHAR(2), parent_id INT, slug VARCHAR(191), update_time DATE NOT NULL, PRIMARY KEY (id), FOREIGN KEY (parent_id) REFERENCES sb_articles(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
+        }
     } catch (Exception $exception) {
     }
     // Temp. Deprecated
 
-
-    if (sb_isset($_COOKIE, 'sb-updates') != SB_VERSION) {
+    if (sb_isset($_COOKIE, 'sb-updates') != SB_VERSION && !sb_is_debug()) {
         sb_cloud_load();
         try {
+
+            //3.7.2
+            sb_db_query('CREATE TABLE IF NOT EXISTS sb_articles (id INT NOT NULL AUTO_INCREMENT, title VARCHAR(191) NOT NULL, content TEXT NOT NULL, editor_js TEXT NOT NULL, nav TEXT, link VARCHAR(191), category VARCHAR(191), parent_category VARCHAR(191), language VARCHAR(2), parent_id INT, slug VARCHAR(191), update_time DATE NOT NULL, PRIMARY KEY (id), FOREIGN KEY (parent_id) REFERENCES sb_articles(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
 
             // 3.7.1
             sb_db_query('ALTER TABLE sb_conversations ADD COLUMN extra_3 varchar(191) AFTER extra_2');
@@ -898,6 +906,7 @@ function sb_installation($details, $force = false) {
         $db_respones['messages'] = $connection->query('CREATE TABLE IF NOT EXISTS sb_messages (id int NOT NULL AUTO_INCREMENT, user_id INT NOT NULL, message TEXT NOT NULL, creation_time DATETIME NOT NULL, status_code TINYINT DEFAULT 0, attachments TEXT, payload TEXT, conversation_id INT NOT NULL, PRIMARY KEY (id), FOREIGN KEY (user_id) REFERENCES sb_users(id) ON DELETE CASCADE, FOREIGN KEY (conversation_id) REFERENCES sb_conversations(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin');
         $db_respones['settings'] = $connection->query('CREATE TABLE IF NOT EXISTS sb_settings (name VARCHAR(191) NOT NULL, value LONGTEXT, PRIMARY KEY (name)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
         $db_respones['reports'] = $connection->query('CREATE TABLE IF NOT EXISTS sb_reports (id INT NOT NULL AUTO_INCREMENT, name VARCHAR(191) NOT NULL, value TEXT NOT NULL, creation_time DATE NOT NULL, external_id INT, extra VARCHAR(191), PRIMARY KEY (id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
+        $db_respones['articles'] = $connection->query('CREATE TABLE IF NOT EXISTS sb_articles (id INT NOT NULL AUTO_INCREMENT, title VARCHAR(191) NOT NULL, content TEXT NOT NULL, editor_js TEXT NOT NULL, nav TEXT, link VARCHAR(191), category VARCHAR(191), parent_category VARCHAR(191), language VARCHAR(2), parent_id INT, slug VARCHAR(191), update_time DATE NOT NULL, PRIMARY KEY (id), FOREIGN KEY (parent_id) REFERENCES sb_articles(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
 
         // Create the admin user
         if (isset($details['first-name']) && isset($details['last-name']) && isset($details['email']) && isset($details['password'])) {
@@ -985,7 +994,7 @@ function sb_push_notification($title = '', $message = '', $icon = '', $interest 
         if (is_numeric($interest)) {
             if (!in_array(intval($interest), $agents_ids)) {
                 if ($is_user && empty($GLOBALS['SB_FORCE_ADMIN'])) {
-                    return sb_error('security-error', 'sb_push_notification');
+                    return sb_error('security-erroraaa', 'sb_push_notification');
                 }
             } else {
                 $recipient_agent = true;
@@ -994,7 +1003,7 @@ function sb_push_notification($title = '', $message = '', $icon = '', $interest 
             for ($i = 0; $i < count($interest); $i++) {
                 if (!in_array(intval($interest[$i]), $agents_ids)) {
                     if ($is_user && empty($GLOBALS['SB_FORCE_ADMIN'])) {
-                        return sb_error('security-error', 'sb_push_notification');
+                        return sb_error('security-erroasr', 'sb_push_notification');
                     }
                 } else {
                     $recipient_agent = true;
@@ -1044,9 +1053,12 @@ function sb_push_notification($title = '', $message = '', $icon = '', $interest 
             $response = sb_pusher_curl('publishes', '{"interests":' . (is_array($interest) ? json_encode($interest) : '["' . str_replace(' ', '', $interest) . '"]') . $query);
         }
     } else {
-        $query = ['headings' => ['en' => $title], 'contents' => ['en' => $message], 'chrome_web_badge' => $icon, 'firefox_icon' => $icon, 'chrome_icon' => $icon, 'data' => $query_data];
+        $query = ['headings' => ['en' => $title], 'contents' => ['en' => $message], 'chrome_web_badge' => SB_URL . '/media/badge.png', 'firefox_icon' => $icon, 'chrome_web_icon' => $icon, 'priority' => 10, 'data' => $query_data];
         if ($link) {
             $query['url'] = $link;
+        }
+        if ($conversation_id) {
+            $query['collapse_id'] = $conversation_id;
         }
         if ($image) {
             $query['chrome_web_image'] = $image;
@@ -1090,6 +1102,8 @@ function sb_pusher_trigger($channel, $event, $data = []) {
             case 'new-message':
             case 'new-conversation':
             case 'client-typing':
+            case 'close-notifications':
+            case 'close-notifications-received':
             case 'typing':
                 $security = sb_is_agent() || $channel == ('private-user-' . $user_id);
                 break;
@@ -1272,8 +1286,8 @@ function sb_encryption($string, $encrypt = true) {
 function sb_string_slug($string, $action = 'slug') {
     $string = trim($string);
     if ($action == 'slug') {
-        $string = str_replace(['\'', '"', ','], '', sb_sanatize_string($string));
-        return strtolower(str_replace([' ', ' '], '-', $string)); // Do not delete double space (they are 2 different chars)
+        $string = strtolower(str_replace([' ', ' '], '-', $string)); // Do not delete double space (they are 2 different chars)
+        return preg_replace('/[^A-Za-z0-9\-]/', '', sb_sanatize_string($string));
     } else if ($action == 'string') {
         return ucfirst(strtolower(str_replace(['-', '_'], ' ', $string)));
     }
@@ -1484,14 +1498,11 @@ function sb_get_server_max_file_size() {
         return 9999;
     }
     switch ($suffix) {
-        case 'P':
-            $size /= 1024;
-        case 'T':
-            $size /= 1024;
         case 'G':
-            $size /= 1024;
-        case 'K':
             $size *= 1024;
+            break;
+        case 'K':
+            $size /= 1024;
             break;
     }
     return $size;
@@ -1681,7 +1692,7 @@ function sb_webhooks($function_name, $parameters) {
     $webhook_name = sb_isset($names, $function_name);
     if ($webhook_name) {
         $webhooks = sb_get_setting('webhooks');
-        $webhook_url = $webhooks['webhooks-url'];
+        $webhook_url = sb_isset($webhooks, 'webhooks-url');
         if ($webhooks && $webhook_url && $webhooks['webhooks-active']) {
             $allowed_webhooks = $webhooks['webhooks-allowed'];
             if ($allowed_webhooks && $allowed_webhooks !== true) {
@@ -1749,6 +1760,9 @@ function sb_cron_jobs() {
     }
     if (defined('SB_AECOMMERCE')) {
         sb_aecommerce_clean_carts();
+    }
+    if (sb_chatbot_active(false, true)) {
+        sb_open_ai_embeddings_conversations();
     }
     sb_clean_data();
     sb_db_query('DELETE FROM sb_settings WHERE name="cron-functions"');
@@ -2361,7 +2375,7 @@ function sb_reports($report_name, $date_start = false, $date_end = false, $timez
     }
 
     // Return the data
-    return ['title' => sb_($title), 'description' => sb_($description), 'data' => $data_final, 'table' => $table, 'table-inverse' => $time_range, 'label_type' => $label_type, 'chart_type' => $chart_type];
+    return ['title' => sb_($title), 'description' => sb_($description), 'data' => $data_final, 'table' => $table, 'table_inverse' => $time_range, 'label_type' => $label_type, 'chart_type' => $chart_type];
 }
 
 function sb_reports_update($name, $value = false, $external_id = false, $extra = false) {

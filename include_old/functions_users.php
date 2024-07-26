@@ -326,9 +326,6 @@ function sb_add_user($settings = [], $settings_extra = [], $hash_password = true
     if (!empty($settings_extra['phone']) && sb_get_user_by('phone', $settings_extra['phone'][0]) && !sb_get_setting('duplicate-emails')) {
         return new SBValidationError('duplicate-phone');
     }
-	if (!empty($settings_extra['phone'])) {
-        $settings_extra['phone'][0] = (preg_match("/^\+/", $settings_extra['phone'][0])) ? $settings_extra['phone'][0] : "+" . $settings_extra['phone'][0];
-    }
     if (empty($settings['profile_image'])) {
         $settings['profile_image'] = sb_get_avatar($settings['first_name'], $settings['last_name']);
     }
@@ -1222,7 +1219,9 @@ function sb_get_user_by($by, $value) {
  * 1. Update the queue and return the current queue status
  * 2. Internal function
  * 3. Assign the conversation to an agent
- * 4. Route conversations to agents
+ * 4. Assigne all unassigned conversations to the active agent
+ * 5. Route conversations to agents
+ * 6. Find the best agent to assign a conversation
  *
  */
 
@@ -1257,37 +1256,9 @@ function sb_queue($conversation_id, $department = false) {
         }
     }
     if (count($queue) == 0 || $position == 1) {
-        $department = sb_db_escape($department);
-        $online_agents_ids = sb_get_online_user_ids('agent');
-        $smaller = false;
-        if (!empty($online_agents_ids)) {
-            $online_agents_query = ' IN (' . implode(', ', $online_agents_ids) . ')';
-            $counts = sb_db_get('SELECT id AS `agent_id` FROM sb_users WHERE id NOT IN (SELECT agent_id FROM sb_conversations WHERE agent_id IS NOT NULL ' . ($department ? ' AND department = ' . $department : '') . ') AND id' . $online_agents_query, false);
-            if (empty($counts)) {
-                $counts = sb_db_get('SELECT COUNT(*) AS `count`, agent_id FROM sb_conversations WHERE (status_code = 0 OR status_code = 1 OR status_code = 2) AND agent_id IS NOT NULL' . ($department ? ' AND department = ' . $department : '') . ' AND agent_id' . $online_agents_query . ' GROUP BY agent_id', false);
-            }
-            $cuncurrent_chats = !$settings || !$settings['queue-concurrent-chats'] ? 5 : intval($settings['queue-concurrent-chats']);
-            for ($i = 0; $i < count($counts); $i++) {
-                $count = intval(sb_isset($counts[$i], 'count', 0));
-                if ($count < $cuncurrent_chats && ($smaller === false || $count < $smaller['count'])) {
-                    $smaller = $counts[$i];
-                }
-            }
-            if ($smaller === false) {
-                $query = '';
-                for ($i = 0; $i < count($counts); $i++) {
-                    $query .= $counts[$i]['agent_id'] . ',';
-                }
-                $smaller = sb_db_get('SELECT id FROM sb_users WHERE user_type = "agent"' . ($query ? ' AND id NOT IN (' . substr($query, 0, -1) . ')' : '') . ' AND id' . $online_agents_query . ($department ? ' AND department = ' . $department : '') . ' LIMIT 1');
-                if (empty($smaller)) {
-                    $smaller = false;
-                } else {
-                    $smaller = ['agent_id' => $smaller['id']];
-                }
-            }
-        }
-        if ($smaller !== false) {
-            sb_routing_assign_conversation($smaller['agent_id'], $conversation_id);
+        $agent_id = sb_routing_find_best_agent($department, intval(sb_isset($settings, 'queue-concurrent-chats', 5)));
+        if ($agent_id !== false) {
+            sb_routing_assign_conversation($agent_id, $conversation_id);
             array_shift($queue);
             $position = 0;
             $user_id = $conversation['user_id'];
@@ -1324,56 +1295,61 @@ function sb_routing_and_department_db($table_name = 'sb_conversations', $users =
     $routing = sb_isset(sb_get_active_user(), 'user_type') == 'agent' && (sb_get_multi_setting('queue', 'queue-active') || sb_get_setting('routing') || $hide);
     $routing_unassigned = $routing && $hide && sb_get_multi_setting('agent-hide-conversations', 'agent-hide-conversations-view');
     $department = sb_get_agent_department();
-    $department = false;
     $query = ($routing ? (' AND (' . $table_name . '.agent_id = ' . sb_get_active_user_ID() . ($routing_unassigned ? (' OR (' . $table_name . '.agent_id IS NULL OR ' . $table_name . '.agent_id = ""))') : ')')) : '') . ($department !== false ? ' AND ' . $table_name . '.department = ' . $department : '');
-    return $query ? ($users ? ' AND (' . ($department !== false ? 'department = ' . $department . ' OR ' : '') . 'id IN (SELECT user_id FROM ' . $table_name . ' WHERE ' . substr($query, 4) . '))' : $query) : '';
+    return $query ? $users ? ' AND (' . ($department !== false ? 'department = ' . $department . ' OR ' : '') : $query : '';
     // return '';
-    // return $query ? ($users ? ' AND (' . ($department !== false ? 'department = ' . $department . ' OR ' : '') : $query) : '';
 }
 
-// function sb_routing_and_department_db($table_name = 'sb_conversations', $users = false) {
-//     $hide = sb_get_multi_setting('agent-hide-conversations', 'agent-hide-conversations-active');
-//     $routing = sb_isset(sb_get_active_user(), 'user_type') == 'agent' && (sb_get_multi_setting('queue', 'queue-active') || sb_get_setting('routing') || $hide);
-//     $routing_unassigned = $routing && $hide && sb_get_multi_setting('agent-hide-conversations', 'agent-hide-conversations-view');
-//     $department = sb_get_agent_department();
-//     $query = ($routing ? (' AND (' . $table_name . '.agent_id = ' . sb_get_active_user_ID() . ($routing_unassigned ? (' OR (' . $table_name . '.agent_id IS NULL OR ' . $table_name . '.agent_id = ""))') : ')')) : '');
-//     // return $query ? $users ? ' AND (' . ($department !== false ? 'department = ' . $department . ' OR ' : '') : $query : '';
-// //    return $query ? ($users ? ' AND (' . ($department !== false ? 'department = ' . $department . ' OR ' : '') . 'id IN (SELECT user_id FROM ' . $table_name . ' WHERE ' . substr($query, 4) . '))' : $query) : '';
-//    return $query ? ($users ? ' AND (' . ($department !== false ? 'department = ' . $department . ' OR ' : '') . 'id IN (SELECT user_id FROM ' . $table_name . ' WHERE ' . substr($query, 4) . '))' : $query) : '';
-//    // return $query;
-// }
-
-function sb_routing_assign_conversation($agent_id, $conversation_id) {
+function sb_routing_assign_conversation($agent_id, $conversation_id = false) {
     return sb_db_query('UPDATE sb_conversations SET agent_id = ' . (is_null($agent_id) ? 'NULL' : sb_db_escape($agent_id, true)) . ' WHERE id = ' . sb_db_escape($conversation_id, true));
 }
 
-function sb_routing($conversation_id = false, $department = false, $unassigned = false) {
-    $count_last = 0;
-    $index = 0;
-    $online_agents = sb_get_online_user_ids(true);
-    $department = sb_db_escape($department, true);
-    $agents = count($online_agents) ? sb_db_get('SELECT id FROM sb_users WHERE user_type = "agent" AND id IN (' . implode(',', $online_agents) . ')' . (sb_isset_num($department) ? ' AND department = ' . $department : ''), false) : [];
-    $count = count($agents);
-    if ($count == 0) {
-        if ($unassigned) {
-            return $conversation_id ? sb_routing_assign_conversation(null, $conversation_id) : null;
-        }
-        $agents = sb_db_get('SELECT id FROM sb_users WHERE user_type = "agent"' . (sb_isset_num($department) ? ' AND department = ' . $department : ''), false);
-        $count = count($agents);
-    }
-    if ($count) {
-        for ($i = 0; $i < $count; $i++) {
-            $count_now = intval(sb_db_get('SELECT COUNT(*) AS `count` FROM sb_conversations WHERE (status_code = 0 OR status_code = 1 OR status_code = 2) AND agent_id = ' . $agents[$i]['id'])['count']);
-            if ($count_last > $count_now) {
-                $index = $i;
-                break;
-            }
-            $count_last = $count_now;
-        }
-        return $conversation_id == -1 || !$conversation_id ? $agents[$index]['id'] : sb_routing_assign_conversation($agents[$index]['id'], $conversation_id);
+function sb_routing_assign_conversations_active_agent() {
+    $active_user = sb_get_active_user();
+    if ($active_user && sb_isset($active_user, 'user_type') == 'agent') {
+        $department = sb_get_agent_department();
+        return sb_db_query('UPDATE sb_conversations SET agent_id = "' . $active_user['id'] . '" WHERE (agent_id = "" OR agent_id IS NULL)' . ($department !== false ? ' AND department = ' . $department : ''));
     }
     return false;
 }
 
+function sb_routing($conversation_id = false, $department = false, $unassigned = false) {
+    $agent_id = sb_routing_find_best_agent($department);
+    if ($agent_id) {
+        return $conversation_id == -1 || !$conversation_id ? $agent_id : sb_routing_assign_conversation($agent_id, $conversation_id);
+    } else if ($unassigned) {
+        return $conversation_id ? sb_routing_assign_conversation(null, $conversation_id) : null;
+    }
+    return false;
+}
+
+function sb_routing_find_best_agent($department = false, $cuncurrent_chats = 9999) {
+    $department = sb_db_escape($department);
+    $online_agents_ids = sb_get_online_user_ids('agent');
+    $smaller = false;
+    if (!empty($online_agents_ids)) {
+        $online_agents_query = ' IN (' . implode(', ', $online_agents_ids) . ')';
+        $counts = sb_db_get('SELECT id AS `agent_id` FROM sb_users WHERE id NOT IN (SELECT agent_id FROM sb_conversations WHERE agent_id IS NOT NULL ' . ($department ? ' AND department = ' . $department : '') . ') AND id' . $online_agents_query, false);
+        if (empty($counts)) {
+            $counts = sb_db_get('SELECT COUNT(*) AS `count`, agent_id FROM sb_conversations WHERE (status_code = 0 OR status_code = 1 OR status_code = 2) AND agent_id IS NOT NULL' . ($department ? ' AND department = ' . $department : '') . ' AND agent_id' . $online_agents_query . ' GROUP BY agent_id', false);
+        }
+        for ($i = 0; $i < count($counts); $i++) {
+            $count = intval(sb_isset($counts[$i], 'count', 0));
+            if ($count < $cuncurrent_chats && ($smaller === false || $count < $smaller['count'])) {
+                $smaller = $counts[$i];
+            }
+        }
+        if ($smaller === false) {
+            $query = '';
+            for ($i = 0; $i < count($counts); $i++) {
+                $query .= $counts[$i]['agent_id'] . ',';
+            }
+            $smaller = sb_isset(sb_db_get('SELECT id FROM sb_users WHERE user_type = "agent"' . ($query ? ' AND id NOT IN (' . substr($query, 0, -1) . ')' : '') . ' AND id' . $online_agents_query . ($department ? ' AND department = ' . $department : '') . ' LIMIT 1'), 'id');
+        } else {
+            $smaller = $smaller['agent_id'];
+        }
+    }
+    return $smaller;
+}
 
 ?>

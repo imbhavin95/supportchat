@@ -38,6 +38,12 @@ if (sb_is_cloud()) {
         die('cloud-load-error');
     }
 }
+if (sb_get_setting('ip-ban')) {
+    $ip = isset($_SERVER['HTTP_CF_CONNECTING_IP']) && substr_count($_SERVER['HTTP_CF_CONNECTING_IP'], '.') == 3 ? $_SERVER['HTTP_CF_CONNECTING_IP'] : $_SERVER['REMOTE_ADDR'];
+    if (strpos(sb_get_setting('ip-ban'), $ip) !== false) {
+        die('ip-banned');
+    }
+}
 sb_init_translations();
 if (sb_isset($_GET, 'mode') == 'tickets') {
     sb_component_tickets();

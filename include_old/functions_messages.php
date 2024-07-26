@@ -88,21 +88,9 @@ function sb_get_conversations($pagination = 0, $status_code = 0, $department = f
     if (!$status_code) {
         $status_code = 0;
     }
-    $query = SELECT_CONVERSATIONS . 'WHERE B.id = A.user_id ' . ($status_code === 'all' ? '' : ($status_code == 0 ? ' AND C.status_code <> 3 AND C.status_code <> 4' : ' AND C.status_code = ' . sb_db_escape($status_code))) . ' AND C.id = A.conversation_id' . ($source !== false ? ' AND ' . ($source === '' ? '(C.source IS NULL OR C.source = "")' : 'C.source = "' . sb_db_escape($source) . '"') : '') . ($tag ? ' AND C.tags LIKE "%' . sb_db_escape($tag) . '%"' : '') . (sb_get_agent_department() === false && $department ? ' AND C.department = ' . sb_db_escape($department, true) : '') . sb_routing_and_department_db('C') . ' AND A.id IN (SELECT max(id) FROM sb_messages WHERE message <> "" OR attachments <> "" GROUP BY conversation_id) ' . $exclude_visitors . ' GROUP BY conversation_id ORDER BY A.id DESC LIMIT ' . (intval(sb_db_escape($pagination, true)) * 100) . ',100';
+    $query = SELECT_CONVERSATIONS . 'WHERE B.id = A.user_id ' . ($status_code === 'all' ? '' : ($status_code == 0 ? ' AND C.status_code <> 3 AND C.status_code <> 4' : ' AND C.status_code = ' . sb_db_escape($status_code))) . ' AND C.id = A.conversation_id' . ($source !== false ? ' AND ' . ($source === '' ? '(C.source IS NULL OR C.source = "")' : 'C.source = "' . sb_db_escape($source) . '"') : '') . ($tag ? ' AND C.tags LIKE "%' . sb_db_escape($tag) . '%"' : '') . (sb_get_agent_department() === false && $department ? ' AND C.department = ' . sb_db_escape($department, true) : '') . sb_routing_and_department_db('C') . ' AND A.id IN (SELECT max(id) FROM sb_messages WHERE message <> "" OR attachments <> "" GROUP BY conversation_id) ' . $exclude_visitors . ' GROUP BY conversation_id ORDER BY ' . (sb_get_setting('order-by-date') ? '' :  'FIELD(C.status_code, 2) DESC,') . 'A.id DESC LIMIT ' . (intval(sb_db_escape($pagination, true)) * 100) . ',100';
     $result = sb_db_get($query, false);
-    if (isset($result) && is_array($result)) {
-        if (!sb_get_setting('order-by-date')) {
-            $top = [];
-            $bottom = [];
-            for ($i = 0; $i < count($result); $i++) {
-                if ($result[$i]['conversation_status_code'] == 2) {
-                    array_push($top, $result[$i]);
-                } else {
-                    array_push($bottom, $result[$i]);
-                }
-            }
-            $result = array_merge($top, $bottom);
-        }
+    if (isset($result) && is_array($result)) {   
         return sb_get_conversations_users($result);
     } else {
         return sb_error('db-error', 'sb_get_conversations', $result);
@@ -146,25 +134,26 @@ function sb_search_user_conversations($search, $user_id = false) {
     return sb_db_get(SELECT_CONVERSATIONS . 'WHERE A.conversation_id = C.id AND B.id = C.user_id AND B.id = ' . ($user_id === false ? sb_get_active_user_ID() : sb_db_escape($user_id, true)) . ' AND (LOWER(A.message) LIKE "%' . $search . '%" OR LOWER(A.attachments) LIKE "%' . $search . '%" OR LOWER(C.title) LIKE "%' . $search . '%") GROUP BY A.conversation_id ORDER BY A.creation_time DESC', false);
 }
 
-// function sb_get_user_conversations($user_id, $exclude_id = -1, $agent = false) {
-//     $exclude = $exclude_id != -1 ? ' AND A.conversation_id <> ' . sb_db_escape($exclude_id) : '';
-//     $user_id = sb_db_escape($user_id, true);
-//     $ids = sb_db_get($agent ? 'SELECT conversation_id AS `id` FROM sb_messages WHERE user_id = ' . $user_id . ' GROUP BY conversation_id' : 'SELECT id FROM sb_conversations WHERE user_id = ' . $user_id . ' GROUP BY id', false);
-//     $ids_string = '';
-//     $count = count($ids);
-//     if ($count) {
-//         for ($i = 0; $i < $count; $i++) {
-//             $ids_string .= $ids[$i]['id'] . ',';
-//         }
-//         return sb_db_get(SELECT_CONVERSATIONS . 'WHERE B.id = A.user_id' . sb_routing_and_department_db('C') . ' AND A.conversation_id = C.id AND A.id IN (SELECT max(A.id) FROM sb_messages A, sb_conversations C WHERE (A.message <> "" OR A.attachments <> "") AND A.conversation_id = C.id' . ($agent ? '' : ' AND C.user_id = ' . $user_id) . $exclude . ' GROUP BY conversation_id)' . ($ids_string ? ' AND A.conversation_id IN (' . substr($ids_string, 0, -1) . ')' : '') . ' GROUP BY conversation_id ORDER BY A.id DESC', false);
-//     }
-//     return [];
-// }
+//function sb_get_user_conversations($user_id, $exclude_id = -1, $agent = false) {
+//    $exclude = $exclude_id != -1 ? ' AND A.conversation_id <> ' . sb_db_escape($exclude_id) : '';
+//    $user_id = sb_db_escape($user_id, true);
+//    $ids = sb_db_get($agent ? 'SELECT conversation_id AS `id` FROM sb_messages WHERE user_id = ' . $user_id . ' GROUP BY conversation_id' : 'SELECT id FROM sb_conversations WHERE user_id = ' . $user_id . ' GROUP BY id', false);
+//    $ids_string = '';
+//    $count = count($ids);
+//    if ($count) {
+//        for ($i = 0; $i < $count; $i++) {
+//            $ids_string .= $ids[$i]['id'] . ',';
+//        }
+//        return sb_db_get(SELECT_CONVERSATIONS . 'WHERE B.id = A.user_id' . sb_routing_and_department_db('C') . ' AND A.conversation_id = C.id AND A.id IN (SELECT max(A.id) FROM sb_messages A, sb_conversations C WHERE (A.message <> "" OR A.attachments <> "") AND A.conversation_id = C.id' . ($agent ? '' : ' AND C.user_id = ' . $user_id) . $exclude . ' GROUP BY conversation_id)' . ($ids_string ? ' AND A.conversation_id IN (' . substr($ids_string, 0, -1) . ')' : '') . ' GROUP BY conversation_id ORDER BY A.id DESC', false);
+//    }
+//    return [];
+//}
+
 
 function sb_get_user_conversations($user_id, $exclude_id = -1, $agent = false) {
     $exclude = $exclude_id != -1 ? ' AND A.conversation_id <> ' . sb_db_escape($exclude_id) : '';
     $user_id = sb_db_escape($user_id, true);
-    $ids = sb_db_get($agent ? 'SELECT conversation_id AS `id` FROM sb_messages WHERE user_id = ' . $user_id . ' GROUP BY conversation_id' : 'SELECT id FROM sb_conversations WHERE user_id = ' . $user_id . ' GROUP BY id', false);
+    $ids = sb_db_get($agent ? 'SELECT conversation_id AS `id` FROM sb_messages GROUP BY conversation_id' : 'SELECT id FROM sb_conversations GROUP BY id', false);
     $ids_string = '';
     $count = count($ids);
     if ($count) {
@@ -1077,8 +1066,8 @@ function sb_get_rich_message($name, $settings = false) {
             case 'articles':
                 $articles_title = sb_get_setting('articles-title');
                 $articles_button_link = sb_get_setting('articles-button-link');
-                $code = '<div class="sb-dashboard-articles"><div class="sb-title">' . sb_t($articles_title ? $articles_title : 'Help Center') . '</div><div class="sb-input sb-input-btn"><input placeholder="' . sb_('Search for articles...') . '" autocomplete="off"><div class="sb-submit-articles sb-icon-arrow-right"></div></div><div class="sb-articles">';
-                $articles = sb_get_articles(-1, 2, false, false, sb_get_user_language());
+                $code = '<div class="sb-dashboard-articles"><div class="sb-title">' . sb_t($articles_title ? $articles_title : 'Help Center') . '</div><div class="sb-input sb-input-btn"><input placeholder="' . sb_('Search for articles...') . '" autocomplete="off"><div class="sb-submit-articles sb-icon-search"></div></div><div class="sb-articles">';
+                $articles = sb_get_articles(false, 2, false, false, sb_get_user_language());
                 for ($i = 0; $i < count($articles); $i++) {
                     if (!empty($articles[$i])) {
                         $code .= '<div data-id="' . $articles[$i]['id'] . '"><div>' . $articles[$i]['title'] . '</div><span>' . $articles[$i]['content'] . '</span></div>';

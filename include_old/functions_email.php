@@ -344,7 +344,10 @@ function sb_email_piping($force = false) {
                                     }
                                 }
                                 if (mb_detect_encoding($message) != 'UTF-8') {
-                                    $message = mb_convert_encoding($message, 'UTF-8', mb_detect_encoding($message));
+                                    $encoding = mb_detect_encoding($message);
+                                    if ($encoding) {
+                                        $message = mb_convert_encoding($message, 'UTF-8', $encoding);
+                                    }
                                 }
 
                                 // Message formatting
@@ -608,9 +611,9 @@ function sb_email_get_conversation_code($conversation_id, $count = false, $is_re
         $attachments = sb_isset($message, 'attachments', []);
         if (!empty($message_text) || count($attachments)) {
             if ($translate && $message_text) {
-                $original_message = sb_isset(json_decode($message['payload'], true), 'original-message');
-                if ($original_message) {
-                    $message_text = $original_message;
+                $message = sb_google_get_message_translation($message);
+                if ($message['message'] != $message_text) {
+                    $message_text = $message['message'];
                 } else {
                     $translation = sb_google_translate([$message_text], $translate)[0];
                     if (count($translation)) {

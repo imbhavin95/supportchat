@@ -88,7 +88,7 @@ function sb_get_front_settings() {
         'disable_offline' => sb_get_setting('chat-offline-disable'),
         'timetable' => sb_get_multi_setting('chat-timetable', 'chat-timetable-active'),
         'articles' => sb_get_setting('articles-active'),
-        'articles_title' => sb_get_setting('articles-title', ''),
+        'articles_url_rewrite' => sb_get_setting('articles-url-rewrite') ? sb_get_setting('articles-page-url') : false,
         'init_dashboard' => sb_get_setting('init-dashboard') && !sb_get_setting('disable-dashboard'),
         'disable_dashboard' => sb_get_setting('disable-dashboard'),
         'queue' => sb_get_multi_setting('queue', 'queue-active'),
@@ -119,6 +119,10 @@ function sb_get_front_settings() {
         'max_file_size' => sb_get_server_max_file_size(),
         'tickets_hide' => sb_get_setting('tickets-hide')
     ];
+    if ($return['articles']) {
+        $return['articles_title'] = sb_get_setting('articles-title', '');
+        $return['articles_categories'] = sb_get_setting('articles-categories');
+    }
     if ($return['welcome']) {
         $return['welcome_trigger'] = sb_get_multi_setting('welcome-message', 'welcome-trigger', 'load');
         $return['welcome_delay'] = sb_get_multi_setting('welcome-message', 'welcome-delay', 2000);
@@ -170,10 +174,10 @@ function sb_get_front_settings() {
         $return['woocommerce'] = true;
         $return['woocommerce_returning_'] = !in_array(sb_isset($active_user, 'user_type'), ['user', 'agent', 'admin']) && sb_get_multi_setting('wc-returning-visitor', 'wc-returning-visitor-active');
     }
-    if ($return['dialogflow_active'] || $return['open_ai_active']) {
+    if (true) {
         $return['dialogflow_human_takeover'] = sb_get_multi_setting('dialogflow-human-takeover', 'dialogflow-human-takeover-active');
         $return['dialogflow_human_takeover_disable_chatbot'] = sb_get_multi_setting('dialogflow-human-takeover', 'dialogflow-human-takeover-disable-chatbot');
-        $return['dialogflow_welcome'] = sb_get_setting('dialogflow-welcome') || sb_get_multi_setting('google', 'google-welcome'); // Deprecated: sb_get_setting('dialogflow-welcome')
+        $return['dialogflow_welcome'] = sb_get_setting('dialogflow-welcome') || sb_get_multi_setting('google', 'dialogflow-welcome'); // Deprecated: sb_get_setting('dialogflow-welcome')
         $return['dialogflow_send_user_details'] = sb_get_setting('dialogflow-send-user-details') || sb_get_multi_setting('google', 'dialogflow-send-user-details'); // Deprecated: sb_get_setting('dialogflow-send-user-details')
         $return['dialogflow_departments'] = sb_get_setting('dialogflow-departments');
         $return['dialogflow_disable_tickets'] = sb_get_setting('dialogflow-disable-tickets');
@@ -185,7 +189,7 @@ function sb_get_front_settings() {
         if (sb_get_multi_setting('chatbot-usage-limit', 'chatbot-usage-limit-quota')) {
             $return['chatbot_limit'] = ['quota' => intval(sb_get_multi_setting('chatbot-usage-limit', 'chatbot-usage-limit-quota')), 'interval' => intval(sb_get_multi_setting('chatbot-usage-limit', 'chatbot-usage-limit-interval')), 'message' => sb_get_multi_setting('chatbot-usage-limit', 'chatbot-usage-limit-message')];
         }
-    } else if (defined('SB_DIALOGFLOW')) {
+    } else if (true) {
         $return['language_detection'] = sb_get_multi_setting('google', 'google-language-detection') || sb_get_multi_setting('dialogflow-language-detection', 'dialogflow-language-detection-active'); // Deprecated: sb_get_multi_setting('dialogflow-language-detection', 'dialogflow-language-detection-active')
         $return['speech_recognition'] = sb_get_multi_setting('open-ai', 'open-ai-speech-recognition');
     }
@@ -211,14 +215,15 @@ function sb_get_front_settings() {
 function sb_js_admin() {
     $cloud = sb_is_cloud();
     $active_user = sb_get_active_user();
-    $active_user_type = $active_user ? $active_user['user_type'] : false;
-    $agent = $active_user_type == 'agent';
+    $active_user_type = sb_isset($active_user, 'user_type');
+    $is_agent = $active_user_type == 'agent';
     $language = sb_get_admin_language();
     $settings = [
         'bot_id' => sb_get_bot_id(),
         'close_message' => sb_get_multi_setting('close-message', 'close-active'),
         'close_message_transcript' => sb_get_multi_setting('close-message', 'close-transcript'),
-        'routing' => (!$active_user || $agent) && (sb_get_multi_setting('queue', 'queue-active') || sb_get_setting('routing') || sb_get_multi_setting('agent-hide-conversations', 'agent-hide-conversations-active')),
+        'routing_only' => sb_get_setting('routing'),
+        'routing' => (!$active_user || $is_agent) && (sb_get_multi_setting('queue', 'queue-active') || sb_get_setting('routing') || sb_get_multi_setting('agent-hide-conversations', 'agent-hide-conversations-active')),
         'desktop_notifications' => sb_get_setting('desktop-notifications'),
         'push_notifications' => sb_get_multi_setting('push-notifications', 'push-notifications-active'),
         'push_notifications_users' => sb_get_multi_setting('push-notifications', 'push-notifications-users-active'),
@@ -228,7 +233,7 @@ function sb_js_admin() {
         'sound' => sb_get_multi_setting('sound-settings', 'sound-settings-active-admin') ? ['volume' => sb_get_multi_setting('sound-settings', 'sound-settings-volume-admin', 0.6), 'repeat' => sb_get_multi_setting('sound-settings', 'sound-settings-repeat-admin')] : false,
         'pusher' => sb_pusher_active(),
         'notify_user_email' => sb_get_setting('notify-user-email') || sb_get_multi_setting('email-piping', 'email-piping-active'),
-        'assign_conversation_to_agent' => $agent && sb_get_multi_setting('agent-hide-conversations', 'agent-hide-conversations-active') && sb_get_multi_setting('agent-hide-conversations', 'agent-hide-conversations-view'),
+        'assign_conversation_to_agent' => $is_agent && sb_get_multi_setting('agent-hide-conversations', 'agent-hide-conversations-active') && sb_get_multi_setting('agent-hide-conversations', 'agent-hide-conversations-view'),
         'allow_agent_delete_message' => $active_user_type == 'admin' || sb_get_multi_setting('agents', 'agents-delete-message'),
         'supervisor' => sb_supervisor() ? true : false,
         'sms_active_users' => sb_get_multi_setting('sms', 'sms-active-users'),
@@ -259,10 +264,11 @@ function sb_js_admin() {
         'departments' => sb_get_setting('departments'),
         'departments_show' => sb_get_multi_setting('departments-settings', 'departments-show-list'),
         'notes_hide_name' => sb_get_multi_setting('notes-settings', 'notes-hide-name'),
-        'visitor_default_name' => sb_get_setting('visitor-default-name')
+        'visitor_default_name' => sb_get_setting('visitor-default-name'),
+        'hide_conversation_details' => sb_get_setting('hide-conversation-details')
     ];
     $code = '<script>';
-    if (defined('SB_DIALOGFLOW')) {
+    if (true) {
         $settings['dialogflow'] = sb_get_multi_setting('google', 'dialogflow-active');
         $settings['open_ai_user_expressions'] = sb_get_multi_setting('open-ai', 'open-ai-user-expressions');
         $settings['open_ai_prompt_rewrite'] = sb_get_multi_setting('open-ai', 'open-ai-prompt-message-rewrite');
@@ -301,12 +307,15 @@ function sb_js_admin() {
     }
     if ($active_user) {
         if (empty($active_user['url']) || $active_user['url'] == SB_URL) {
-            $code .= 'var SB_ACTIVE_AGENT = { id: "' . $active_user['id'] . '", email: "' . $active_user['email'] . '", full_name: "' . sb_get_user_name($active_user) . '", user_type: "' . $active_user_type . '", profile_image: "' . $active_user['profile_image'] . '", department: "' . sb_isset($active_user, 'department', '') . '"};';
+            $code .= 'var SB_ACTIVE_AGENT = { id: "' . $active_user['id'] . '", email: "' . $active_user['email'] . '", full_name: "' . sb_get_user_name($active_user) . '", user_type: "' . $active_user_type . '", profile_image: "", department: "' . sb_isset($active_user, 'department', '') . '"};';
         } else {
             $code .= 'SBF.reset();';
         }
     } else {
         $code .= 'var SB_ACTIVE_AGENT = { id: "", full_name: "", user_type: "", profile_image: "", email: "" };';
+    }
+    if ($active_user && $is_agent && $settings['routing_only']) {
+        sb_routing_assign_conversations_active_agent();
     }
     if (defined('SB_WP')) {
         $code .= 'var SB_WP = true;';
@@ -582,8 +591,9 @@ function sb_get_setting_code_help($setting) {
 function sb_save_settings($settings, $external_settings = [], $external_settings_translations = []) {
     if (isset($settings)) {
         global $SB_SETTINGS;
-        if (is_string($settings))
+        if (is_string($settings)) {
             $settings = json_decode($settings, true);
+        }
         $settings_encoded = sb_db_json_escape($settings);
         if (isset($settings_encoded) && is_string($settings_encoded)) {
 
@@ -985,113 +995,178 @@ function sb_update_sw($url) {
  * 2. Save all articles categories
  * 3. Returns all articles
  * 4. Returns all articles categories
- * 5. Search articles
- * 6. Article ratings
+ * 5. Returns a single article category
+ * 6. Search articles
+ * 7. Article ratings
+ * 8. Init articles for the admin area
+ * 9. Generate an excerpt of the article contents
  *
  */
 
-function sb_save_articles($articles, $categories = false, $translations = false) {
-    if (is_string($articles)) {
-        $articles = json_decode($articles, true);
-    }
-    if ($translations && is_string($translations)) {
-        $translations = json_decode($translations, true);
-    }
-    if ($categories == 'delete_all') {
-        sb_save_external_setting('articles-categories', []);
-    } else if ($categories) {
-        sb_save_external_setting('articles-categories', $categories);
-    }
-    $db = '';
-    if ($translations) {
-        foreach ($translations as $key => $value) {
-            $name = 'articles-translations-' . $key;
-            sb_save_external_setting($name, $value);
-            $db .= '"' . $name . '",';
+// Deprecated
+function sb_temp_deprecated_articles_migration() {
+    $articles = sb_get_external_setting('articles');
+    $articles_translations = sb_db_get('SELECT name, value FROM sb_settings WHERE name LIKE "articles-translations-%"', false);
+    $now = date('Y-m-d H:i:s');
+    $ids = [];
+    if ($articles) {
+        for ($i = 0; $i < count($articles); $i++) {
+            $categories = sb_isset($articles[$i], 'categories');
+            $ids[$articles[$i]['id']] = sb_db_query('INSERT INTO sb_articles (title, content, editor_js, nav, link, category, parent_category, language, slug, update_time) VALUES ( "' . sb_db_escape(sb_sanatize_string($articles[$i]['title'])) . '", "' . str_replace(['\"', '"'], ['"', '\"'], sb_sanatize_string($articles[$i]['content'])) . '", "' . sb_db_escape(sb_sanatize_string(json_encode($articles[$i]['editor_js'], JSON_INVALID_UTF8_IGNORE, JSON_UNESCAPED_UNICODE))) . '", "", "' . sb_db_escape(sb_sanatize_string($articles[$i]['link'])) . '", "' . (empty($categories[0]) ? '' : sb_db_escape(sb_sanatize_string($categories[0]))) . '", "' . sb_db_escape(sb_sanatize_string($articles[$i]['parent_category'])) . '", "", "' . sb_db_escape(sb_sanatize_string(sb_string_slug($articles[$i]['title']))) . '", "' . $now . '")', true);
         }
+        for ($j = 0; $j < count($articles_translations); $j++) {
+            $articles = json_decode($articles_translations[$j]['value'], true);
+            for ($i = 0; $i < count($articles); $i++) {
+                $categories = sb_isset($articles[$i], 'categories');
+                sb_db_query('INSERT INTO sb_articles (title, content, editor_js, nav, link, category, parent_category, language, parent_id, slug, update_time) VALUES ("' . sb_db_escape(sb_sanatize_string($articles[$i]['title'])) . '", "' . str_replace(['\"', '"'], ['"', '\"'], sb_sanatize_string($articles[$i]['content'])) . '", "' . sb_db_escape(sb_sanatize_string(json_encode($articles[$i]['editor_js'], JSON_INVALID_UTF8_IGNORE, JSON_UNESCAPED_UNICODE))) . '", "", "' . sb_db_escape(sb_sanatize_string($articles[$i]['link'])) . '", "' . (empty($categories[0]) ? '' : sb_db_escape(sb_sanatize_string($categories[0]))) . '", "' . sb_db_escape(sb_sanatize_string(sb_isset($articles[$i], 'parent_category', ''))) . '", "' . sb_db_escape(sb_sanatize_string(str_replace('articles-translations-', '', $articles_translations[$j]['name']))) . '", "' . $ids[$articles[$i]['id']] . '", "' . sb_db_escape(sb_sanatize_string(sb_string_slug($articles[$i]['title']))) . '", "' . $now . '")');
+            }
+        }
+        $parent_categories = array_column(sb_db_get('SELECT parent_category FROM sb_articles WHERE parent_category <> "" GROUP BY parent_category', false), 'parent_category');
+        $categories = sb_get_articles_categories();
+        for ($i = 0; $i < count($categories); $i++) {
+            for ($j = 0; $j < count($parent_categories); $j++) {
+                if (strtolower($categories[$i]['id']) == strtolower($parent_categories[$j])) {
+                    $categories[$i]['parent'] = true;
+                    break;
+                }
+            }
+            $category_new_id = sb_string_slug($categories[$i]['title']);
+            sb_db_query('UPDATE sb_articles SET category = "' . $category_new_id . '" WHERE category = "' . $categories[$i]['id'] . '"');
+            sb_db_query('UPDATE sb_articles SET parent_category = "' . $category_new_id . '" WHERE parent_category = "' . $categories[$i]['id'] . '"');
+            $categories[$i]['id'] = $category_new_id;
+        }
+        sb_save_articles_categories($categories);
+        sb_db_query('DELETE FROM sb_settings WHERE name = "articles"');
+        sb_db_query('DELETE FROM sb_settings WHERE name LIKE "articles-translations-%"');
     }
-    sb_db_query('DELETE FROM sb_settings WHERE name LIKE "articles-translations-%"' . ($db ? ' AND name NOT IN (' . substr($db, 0, -1) . ')' : ''));
-    return sb_save_external_setting('articles', $articles);
+}
+// Deprecated
+
+function sb_save_article($article) {
+    if (is_string($article)) {
+        $article = json_decode($article, true);
+    }
+    $article_id = sb_db_escape(sb_isset($article, 'id'), true);
+    if (sb_isset($article, 'delete')) {
+        return sb_db_query('DELETE FROM sb_articles WHERE id = ' . $article_id);
+    }
+    $article_title = sb_db_escape(sb_sanatize_string($article['title']));
+    $article_content = str_replace(['\"', '"'], ['"', '\"'], sb_sanatize_string(sb_isset($article, 'content')));
+    $article_editor_js = sb_isset($article, 'editor_js', '');
+    $article_link = trim(sb_db_escape(sb_sanatize_string(sb_isset($article, 'link'))));
+    $article_category = sb_db_escape(sb_sanatize_string(sb_isset($article, 'category', '')));
+    $article_parent_category = sb_db_escape(sb_sanatize_string(sb_isset($article, 'parent_category', '')));
+    $article_language = sb_db_escape(sb_sanatize_string(sb_isset($article, 'language', '')));
+    $article_parent_id = sb_db_escape(sb_isset($article, 'parent_id', 'NULL'));
+    $article_slug = sb_db_escape(sb_sanatize_string(sb_string_slug($article_title)));
+    if ($article_editor_js) {
+        $article_editor_js = str_replace('&lt;', '<', sb_db_json_escape($article_editor_js));
+    }
+    if (empty($article_title)) {
+        $article_title = '#' . $article_id;
+    }
+    if (!$article_id) {
+        return sb_db_query('INSERT INTO sb_articles (title, content, editor_js, nav, link, category, parent_category, language, parent_id, slug, update_time) VALUES ("' . $article_title . '", "' . $article_content . '", "' . $article_editor_js . '", "", "' . $article_link . '", "' . $article_category . '", "' . $article_parent_category . '", "' . $article_language . '", ' . $article_parent_id . ', "' . $article_slug . '", "' . date('Y-m-d H:i:s') . '")', true);
+    } else {
+        sb_db_query('UPDATE sb_articles SET category = "' . $article_category . '", parent_category = "' . $article_parent_category . '" WHERE parent_id = ' . $article_id);
+        return sb_db_query('UPDATE sb_articles SET title = "' . $article_title . '", content = "' . $article_content . '", editor_js = "' . $article_editor_js . '", link = "' . $article_link . '", category = "' . $article_category . '", parent_category = "' . $article_parent_category . '", language = "' . $article_language . '", parent_id = ' . $article_parent_id . ', slug = "' . $article_slug . '", update_time = "' . date('Y-m-d H:i:s') . '" WHERE id = ' . $article_id);
+    }
 }
 
 function sb_save_articles_categories($categories) {
-    return sb_save_external_setting('articles-categories', $categories);
+    if (is_string($categories)) {
+        $categories = json_decode($categories, true);
+    }
+    $response = sb_save_external_setting('articles-categories', $categories);
+    if ($response) {
+        $query_categories = ['', ''];
+        for ($i = 0; $i < count($categories); $i++) {
+            $id = $categories[$i]['id'];
+            $query_categories[empty($categories[$i]['parent'])] .= '"' . $id . '",';
+        }
+        sb_db_query('UPDATE sb_articles SET parent_category = ""' . ($query_categories[0] ? ' WHERE parent_category NOT IN (' . substr($query_categories[0], 0, -1) . ')' : ''));
+        sb_db_query('UPDATE sb_articles SET category = ""' . ($query_categories[1] ? ' WHERE category NOT IN (' . substr($query_categories[1], 0, -1) . ')' : ''));
+    }
+    return $response;
 }
 
 function sb_get_articles($article_id = false, $count = false, $full = false, $categories = false, $language = false) {
-    $languages_all = $language == 'all';
+    $query_part = '';
+    if (is_array($language)) {
+        $language = $language[0];
+    }
     if ($language == 'en') {
         $language = false;
     }
-    $articles = sb_get_external_setting($language && !$languages_all ? 'articles-translations-' . $language : 'articles');
-    $articles_translations = [];
-    $return = [];
-    $category = $categories && $categories != 'true' && !is_bool($categories) ? $categories : false;
-    if ($language && empty($articles)) {
-        $articles = sb_get_external_setting('articles');
-    }
-    if ($articles) {
-        $is_id = !empty($article_id) && $article_id !== -1;
+    if ($article_id) {
         $article_id = is_array($article_id) ? $article_id : explode(',', str_replace(' ', '', $article_id));
-        $single_article = $is_id && count($article_id) == 1;
-        $count_return = 0;
-        for ($i = 0; $i < count($articles); $i++) {
-            $article = $articles[$i];
-            if ($single_article) {
-                if (in_array($article['id'], $article_id)) {
-                    sb_reports_update('articles-views', false, false, $article['id']);
-                    array_push($return, $article);
-                    break;
-                }
-            } else if (!empty($article['title']) && (!$is_id || in_array($article['id'], $article_id)) && (!$category || in_array($category, sb_isset($article, 'categories', [])) || $category == sb_isset($article, 'parent_category'))) {
-                array_push($return, $article);
-                $count_return++;
-                if ($count !== false && $count_return == $count)
-                    break;
-            }
+        $count = count($article_id);
+        $query_part = ($count == 1 && !is_numeric($article_id[0]) ? 'slug' : 'id') . ' IN ("' . implode('","', $article_id) . '")';
+        for ($i = 0; $i < $count; $i++) {
+            sb_reports_update('articles-views', false, false, $article_id[$i]);
         }
-        if (!$full) {
-            for ($i = 0; $i < count($return); $i++) {
-                $content = sb_isset($return[$i], 'content', '');
-                if (strlen($content) > 100) {
-                    $content = mb_substr($content, 0, 100) . '...';
-                }
-                $return[$i]['content'] = strip_tags($content);
-            }
-        }
-        if ($count || $single_article) {
-            return empty($return) ? false : (count($return) > 1 ? $return : $return[0]);
+        if ($count == 1) {
+            $language = 'all';
         }
     }
-    if ($languages_all) {
-        $rows = sb_db_get('SELECT name, value FROM sb_settings WHERE name LIKE "articles-translations-%"', false);
-        for ($i = 0; $i < count($rows); $i++) {
-            $articles_translations[substr($rows[$i]['name'], -2)] = json_decode($rows[$i]['value'], true);
-        }
+    if (is_string($categories)) {
+        $categories = [$categories];
     }
-    return ($categories !== false && $categories !== 'false') || $languages_all ? [$return, sb_get_articles_categories(), $articles_translations] : $return;
+    if ($categories) {
+        $query_part .= ($query_part ? ' AND ' : '') . '(category IN ("' . implode('","', $categories) . '") OR parent_category IN ("' . implode('","', $categories) . '"))';
+    }
+    $query_part .= ($language == 'all' ? '' : ($query_part ? ' AND ' : '') . 'language = "' . ($language ? sb_db_escape($language) : '') . '"');
+    $articles = sb_db_get('SELECT * FROM sb_articles' . ($query_part ? ' WHERE ' . $query_part : '') . '  ORDER BY id' . ($count ? ' LIMIT ' . sb_db_escape($count, true) : ''), false);
+    if (!$full) {
+        $articles = sb_articles_excerpt($articles);
+    }
+    return $articles;
 }
 
-function sb_get_articles_categories() {
-    return sb_get_external_setting('articles-categories', []);
+function sb_get_articles_categories($category_type = false) {
+    $categories = sb_isset($GLOBALS, 'SB_ARTICLES_CATEGORIES');
+    if (!$categories) {
+        $categories = sb_get_external_setting('articles-categories', []);
+    }
+    if ($category_type) {
+        $is_parent = $category_type == 'parent';
+        $response = [];
+        for ($i = 0; $i < count($categories); $i++) {
+            $is_parent_item = sb_isset($categories[$i], 'parent');
+            if (($is_parent_item && $is_parent) || (!$is_parent_item && !$is_parent)) {
+                array_push($response, $categories[$i]);
+            }
+        }
+        return $response;
+    }
+    return $categories;
+}
+
+function sb_get_article_category($category_id) {
+    $categories = sb_get_articles_categories();
+    for ($i = 0; $i < count($categories); $i++) {
+        if ($categories[$i]['id'] == $category_id) {
+            return $categories[$i];
+        }
+    }
+    return false;
 }
 
 function sb_search_articles($search, $language = false) {
-    $articles = sb_get_external_setting($language ? 'articles-translations-' . $language : 'articles');
-    $return = [];
-    $search = strtolower($search);
-    if ($language && empty($articles))
-        $articles = sb_get_external_setting('articles');
-    if ($articles) {
-        for ($i = 0; $i < count($articles); $i++) {
-            if (strpos(strtolower($articles[$i]['title']), $search) !== false || strpos(strtolower($articles[$i]['content']), $search)) {
-                $articles[$i]['content'] = mb_substr(strip_tags($articles[$i]['content']), 0, 100);
-                array_push($return, $articles[$i]);
-            }
-        }
+    $search = sb_db_escape($search);
+    if (empty($search)) {
+        return [];
     }
+    if (is_array($language)) {
+        $language = $language[0];
+    }
+    if ($language == 'en') {
+        $language = false;
+    }
+    $articles = sb_db_get('SELECT * FROM sb_articles WHERE (title LIKE "%' . $search . '%" OR content LIKE "%' . $search . '%" OR link LIKE "%' . $search . '%") ' . ($language == 'all' ? '' : 'AND language = "' . ($language ? sb_db_escape($language) : '') . '"') . ' ORDER BY id', false);
+    $articles = sb_articles_excerpt($articles);
     sb_reports_update('articles-searches', $search);
-    return $return;
+    return $articles;
 }
 
 function sb_article_ratings($article_id, $rating = false) {
@@ -1109,6 +1184,40 @@ function sb_article_ratings($article_id, $rating = false) {
         }
     }
     return $ratings;
+}
+
+function sb_init_articles_admin() {
+    $articles = sb_get_external_setting('articles'); // Deprecated
+    if ($articles) { // Deprecated
+        sb_temp_deprecated_articles_migration(); // Deprecated
+    } // Deprecated
+    $articles_all = sb_db_get('SELECT id, title, language, parent_id FROM sb_articles ORDER BY id', false);
+    $articles = [];
+    $articles_translations = [];
+    for ($i = 0; $i < count($articles_all); $i++) {
+        if ($articles_all[$i]['language']) {
+            $id = $articles_all[$i]['parent_id'];
+            $languages = sb_isset($articles_translations, $id, []);
+            array_push($languages, [$articles_all[$i]['language'], $articles_all[$i]['id']]);
+            $articles_translations[$id] = $languages;
+        } else {
+            array_push($articles, $articles_all[$i]);
+        }
+    }
+    return [$articles, sb_get_articles_categories(), $articles_translations, sb_get_setting('articles-page-url')];
+}
+
+function sb_articles_excerpt($articles) {
+    for ($i = 0; $i < count($articles); $i++) {
+        $content = strip_tags(sb_isset($articles[$i], 'content', ''));
+        $articles[$i]['editor_js'] = '';
+        $articles[$i]['content'] = strlen($content) > 100 ? mb_substr($content, 0, 100) . '...' : $content;
+    }
+    return $articles;
+}
+
+function sb_get_articles_page() {
+    require_once(SB_PATH . '/include/articles.php');
 }
 
 ?>
