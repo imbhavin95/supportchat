@@ -647,7 +647,7 @@ function sb_get_users($sorting = ['creation_time', 'DESC'], $user_types = [], $s
     } else {
         $query = ' WHERE user_type <> "bot"';
     }
-    $users = sb_db_get(SELECT_FROM_USERS . ' FROM sb_users ' . $query . sb_routing_and_department_db('sb_conversations', true) . ($main_field_sorting ? (' ORDER BY ' . sb_db_escape($sorting_field) . ' ' . sb_db_escape($sorting[1])) : '') . ' LIMIT ' . (intval(sb_db_escape($pagination, true)) * 100) . ',100', false);
+    $users = sb_db_get(SELECT_FROM_USERS . ' FROM sb_users ' . $query . ($main_field_sorting ? (' ORDER BY ' . sb_db_escape($sorting_field) . ' ' . sb_db_escape($sorting[1])) : '') . ' LIMIT ' . (intval(sb_db_escape($pagination, true)) * 100) . ',100', false);
     $users_count = count($users);
     if (!$users_count) {
         return [];
