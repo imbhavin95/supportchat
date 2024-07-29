@@ -1,7 +1,9 @@
 <?php
+header('Access-Control-Allow-Origin: *');
 
 require('../include/functions.php');
-// error_reporting(0);
+
+error_reporting(0);
 
 if(!empty($_POST))
 {
@@ -32,29 +34,35 @@ if(!empty($_POST))
                 'phone' => [$_POST['phone'], 'Phone']
             ];
 
-            $existingPhone = sb_db_get('SELECT value FROM sb_users_data WHERE value = "' . $_POST['phone'] . '" LIMIT 1');
-            if ($existingPhone) {
-                $response['data'][] = 'Duplicate phone number, Please use another one';
-                echo json_encode($response);
-                die;
-            }
-
-            $userId = sb_add_user($settings);
-
-            sb_add_new_user_extra($userId, $settings_extra);
-
-            if($userId == 'duplicate-email'){
-                $response['data'][] = 'Duplicate email address, Please use another one';
-            }else{
+            $existingUser = sb_db_get('SELECT user_id FROM sb_users_data WHERE value = "' . $_POST['phone'] . '" LIMIT 1');
+            $existingUserEmail = sb_db_get('SELECT id FROM sb_users WHERE email = "' . $_POST['email'] . '" LIMIT 1');
+            if($existingUserEmail){
+                $existingConversation = sb_db_get('SELECT id FROM sb_conversations WHERE user_id = "' . $existingUserEmail['id'] . '" LIMIT 1');
+                if($existingConversation) {
+                    $response = ['status' => 200, 'message' => 'success', 'user_id' => $existingUserEmail['id'], 'conversation_url' => 'https://successinsurance.ae/support/admin.php?conversation='.$existingConversation['id'] ];
+                }else{
+                    $conversationId = sb_new_conversation($existingUserEmail['id'], 3);
+                    $response = ['status' => 200, 'message' => 'success', 'user_id' => $existingUserEmail['id'], 'conversation_url' => 'https://successinsurance.ae/support/admin.php?conversation='.$conversationId['details']['id']];
+                }
+            } else if ($existingUser) {
+                $existingConversation = sb_db_get('SELECT id FROM sb_conversations WHERE user_id = "' . $existingUser['user_id'] . '" LIMIT 1');
+                if($existingConversation) {
+                    $response = ['status' => 200, 'message' => 'success', 'user_id' => $existingUser['user_id'], 'conversation_url' => 'https://successinsurance.ae/support/admin.php?conversation='.$existingConversation['id'] ];
+                }else{
+                    $conversationId = sb_new_conversation($existingUser['user_id'], 3);
+                    $response = ['status' => 200, 'message' => 'success', 'user_id' => $existingUser['user_id'], 'conversation_url' => 'https://successinsurance.ae/support/admin.php?conversation='.$conversationId['details']['id']];
+                }
+            } else{
+                $userId = sb_add_user($settings);
+                sb_add_new_user_extra($userId, $settings_extra);
                 $existingConversation = sb_db_get('SELECT id FROM sb_conversations WHERE user_id = "' . $userId . '" LIMIT 1');
                 if($existingConversation){
-                    $response = ['status' => 200, 'message' => 'success', 'user_id' => $userId, 'conversation_url' => 'https://supportboard.test/admin.php?conversation='.$existingConversation ];
+                    $response = ['status' => 200, 'message' => 'success', 'user_id' => $userId, 'conversation_url' => 'https://successinsurance.ae/support/admin.php?conversation='.$existingConversation ];
                 }else{
                     $conversationId = sb_new_conversation($userId, 3);
-                    $response = ['status' => 200, 'message' => 'success', 'user_id' => $userId, 'conversation_url' => 'https://supportboard.test/admin.php?conversation='.$conversationId['details']['id'], 'conversation_details' => $conversationId['details'] ];
+                    $response = ['status' => 200, 'message' => 'success', 'user_id' => $userId, 'conversation_url' => 'https://successinsurance.ae/support/admin.php?conversation='.$conversationId['details']['id']];
                 }
             }
-
 
             echo json_encode($response);
         }catch (Exception $exception){
