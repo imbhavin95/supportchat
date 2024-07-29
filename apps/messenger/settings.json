@@ -1,0 +1,77 @@
+[
+  {
+    "type": "multi-input",
+    "id": "messenger",
+    "title": "Messenger and Instagram settings",
+    "content": "Synchronize your Messenger and Instagram accounts.",
+    "help": "https://board.support/docs/#messenger",
+    "value": [
+      {
+        "type": "select",
+        "id": "messenger-sync-mode",
+        "title": "Sync mode",
+        "value": [
+          [ "", "Automatic" ],
+          [ "manual", "Manual" ]
+        ]
+      },
+      {
+        "type": "password",
+        "id": "messenger-key",
+        "title": "Secret key"
+      },
+      {
+        "type": "button",
+        "id": "messenger-path-btn",
+        "title": "Configuration URL",
+        "button-text": "Get configuration URL",
+        "button-url": "#"
+      },
+      {
+        "type": "button",
+        "id": "messenger-sync-btn",
+        "title": "Synchronize now",
+        "button-text": "Synchronize now",
+        "button-url": "#"
+      }
+    ]
+  },
+  {
+    "type": "repeater",
+    "id": "messenger-pages",
+    "title": "Facebook pages",
+    "content": "You will get this information by completing the synchronization.",
+    "items": [
+      {
+        "type": "text",
+        "name": "Page name",
+        "id": "messenger-page-name"
+      },
+      {
+        "type": "text",
+        "name": "Page ID",
+        "id": "messenger-page-id"
+      },
+      {
+        "type": "password",
+        "name": "Page token",
+        "id": "messenger-page-token"
+      },
+      {
+        "type": "number",
+        "name": "Instagram ID",
+        "id": "messenger-instagram-id"
+      },
+      {
+        "type": "number",
+        "name": "Department ID",
+        "id": "messenger-page-department"
+      },
+      {
+        "type": "text",
+        "name": "Tags",
+        "id": "messenger-page-tags"
+      }
+    ]
+  }
+]

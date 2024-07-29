@@ -1,0 +1,88 @@
+[01-Jan-2024 09:37:40 America/Boise] PHP Warning:  Undefined array key "id" in /home1/uccessz3/public_html/support/include/functions_messages.php on line 1270
+[05-Jan-2024 15:24:01 America/Boise] PHP Warning:  Undefined array key "name" in /home1/uccessz3/public_html/support/apps/dialogflow/functions.php on line 387
+[05-Jan-2024 15:24:01 America/Boise] PHP Warning:  Undefined array key "name" in /home1/uccessz3/public_html/support/apps/dialogflow/functions.php on line 387
+[05-Jan-2024 15:25:14 America/Boise] PHP Warning:  Undefined array key "name" in /home1/uccessz3/public_html/support/apps/dialogflow/functions.php on line 387
+[05-Jan-2024 15:25:14 America/Boise] PHP Warning:  Undefined array key "name" in /home1/uccessz3/public_html/support/apps/dialogflow/functions.php on line 387
+[09-Jan-2024 03:51:11 America/Boise] PHP Warning:  rename(/home1/uccessz3/public_html/support/uploads/09-01-24/Resolving timed out after 5912 milliseconds,/home1/uccessz3/public_html/support/uploads/09-01-24/7060365734047685.jpg): No such file or directory in /home1/uccessz3/public_html/support/include/functions.php on line 1277
+[10-Jan-2024 10:11:08 America/Boise] PHP Warning:  Undefined array key "profile_pic" in /home1/uccessz3/public_html/support/apps/messenger/functions.php on line 222
+[12-Jan-2024 03:45:15 America/Boise] PHP Warning:  Undefined array key "profile_pic" in /home1/uccessz3/public_html/support/apps/messenger/functions.php on line 222
+[16-Jan-2024 04:50:45 America/Boise] PHP Warning:  Undefined array key "profile_pic" in /home1/uccessz3/public_html/support/apps/messenger/functions.php on line 222
+[19-Jan-2024 03:56:18 America/Boise] PHP Warning:  Undefined array key "profile_pic" in /home1/uccessz3/public_html/support/apps/messenger/functions.php on line 222
+[23-Jan-2024 05:07:46 America/Boise] PHP Warning:  Undefined array key "profile_pic" in /home1/uccessz3/public_html/support/apps/messenger/functions.php on line 222
+[25-Jan-2024 03:14:12 America/Boise] PHP Warning:  Undefined array key "profile_pic" in /home1/uccessz3/public_html/support/apps/messenger/functions.php on line 222
+[29-Jan-2024 06:54:27 America/Boise] PHP Warning:  Undefined array key "profile_pic" in /home1/uccessz3/public_html/support/apps/messenger/functions.php on line 222
+[30-Jan-2024 01:11:36 America/Boise] PHP Fatal error:  Uncaught TypeError: count(): Argument #1 ($value) must be of type Countable|array, null given in /home1/uccessz3/public_html/support/apps/messenger/post.php:99
+Stack trace:
+#0 {main}
+  thrown in /home1/uccessz3/public_html/support/apps/messenger/post.php on line 99
+[30-Jan-2024 01:17:24 America/Boise] PHP Fatal error:  Uncaught TypeError: count(): Argument #1 ($value) must be of type Countable|array, null given in /home1/uccessz3/public_html/support/apps/messenger/post.php:99
+Stack trace:
+#0 {main}
+  thrown in /home1/uccessz3/public_html/support/apps/messenger/post.php on line 99
+[31-Jan-2024 01:34:43 America/Boise] PHP Warning:  Undefined array key "profile_pic" in /home1/uccessz3/public_html/support/apps/messenger/functions.php on line 222
+[31-Jan-2024 03:14:28 America/Boise] PHP Warning:  Undefined array key "profile_pic" in /home1/uccessz3/public_html/support/apps/messenger/functions.php on line 222
+[31-Jan-2024 23:32:10 America/Boise] PHP Warning:  Undefined array key "profile_pic" in /home1/uccessz3/public_html/support/apps/messenger/functions.php on line 222
+[01-Feb-2024 00:11:21 America/Boise] PHP Warning:  mime_content_type(/home1/uccessz3/public_html/support/uploads/01-02-24/ig_messaging_cdn): Failed to open stream: No such file or directory in /home1/uccessz3/public_html/support/include/functions.php on line 1268
+[01-Feb-2024 00:11:21 America/Boise] PHP Warning:  rename(/home1/uccessz3/public_html/support/uploads/01-02-24/ig_messaging_cdn,/home1/uccessz3/public_html/support/uploads/01-02-24/42608074): No such file or directory in /home1/uccessz3/public_html/support/include/functions.php on line 1277
+[01-Feb-2024 00:12:36 America/Boise] PHP Warning:  mime_content_type(/home1/uccessz3/public_html/support/uploads/01-02-24/ig_messaging_cdn): Failed to open stream: No such file or directory in /home1/uccessz3/public_html/support/include/functions.php on line 1268
+[01-Feb-2024 00:12:36 America/Boise] PHP Warning:  rename(/home1/uccessz3/public_html/support/uploads/01-02-24/ig_messaging_cdn,/home1/uccessz3/public_html/support/uploads/01-02-24/600609986): No such file or directory in /home1/uccessz3/public_html/support/include/functions.php on line 1277
+[01-Feb-2024 00:14:36 America/Boise] PHP Warning:  mime_content_type(/home1/uccessz3/public_html/support/uploads/01-02-24/ig_messaging_cdn): Failed to open stream: No such file or directory in /home1/uccessz3/public_html/support/include/functions.php on line 1268
+[01-Feb-2024 00:14:36 America/Boise] PHP Warning:  rename(/home1/uccessz3/public_html/support/uploads/01-02-24/ig_messaging_cdn,/home1/uccessz3/public_html/support/uploads/01-02-24/401991515): No such file or directory in /home1/uccessz3/public_html/support/include/functions.php on line 1277
+[02-Feb-2024 01:32:46 America/Boise] PHP Fatal error:  Uncaught TypeError: count(): Argument #1 ($value) must be of type Countable|array, null given in /home1/uccessz3/public_html/support/apps/messenger/post.php:99
+Stack trace:
+#0 {main}
+  thrown in /home1/uccessz3/public_html/support/apps/messenger/post.php on line 99
+[02-Feb-2024 02:09:19 America/Boise] PHP Fatal error:  Uncaught TypeError: count(): Argument #1 ($value) must be of type Countable|array, null given in /home1/uccessz3/public_html/support/apps/messenger/post.php:99
+Stack trace:
+#0 {main}
+  thrown in /home1/uccessz3/public_html/support/apps/messenger/post.php on line 99
+[02-Feb-2024 02:10:18 America/Boise] PHP Fatal error:  Uncaught TypeError: count(): Argument #1 ($value) must be of type Countable|array, null given in /home1/uccessz3/public_html/support/apps/messenger/post.php:99
+Stack trace:
+#0 {main}
+  thrown in /home1/uccessz3/public_html/support/apps/messenger/post.php on line 99
+[03-Feb-2024 00:59:38 America/Boise] PHP Fatal error:  Uncaught TypeError: count(): Argument #1 ($value) must be of type Countable|array, null given in /home1/uccessz3/public_html/support/apps/messenger/post.php:99
+Stack trace:
+#0 {main}
+  thrown in /home1/uccessz3/public_html/support/apps/messenger/post.php on line 99
+[04-Feb-2024 23:11:22 America/Boise] PHP Fatal error:  Uncaught TypeError: count(): Argument #1 ($value) must be of type Countable|array, null given in /home1/uccessz3/public_html/support/apps/messenger/post.php:99
+Stack trace:
+#0 {main}
+  thrown in /home1/uccessz3/public_html/support/apps/messenger/post.php on line 99
+[05-Feb-2024 21:51:19 America/Boise] PHP Fatal error:  Uncaught TypeError: count(): Argument #1 ($value) must be of type Countable|array, null given in /home1/uccessz3/public_html/support/apps/messenger/post.php:99
+Stack trace:
+#0 {main}
+  thrown in /home1/uccessz3/public_html/support/apps/messenger/post.php on line 99
+[06-Feb-2024 23:15:24 America/Boise] PHP Warning:  Undefined array key "profile_pic" in /home1/uccessz3/public_html/support/apps/messenger/functions.php on line 222
+[07-Feb-2024 01:30:54 America/Boise] PHP Warning:  Undefined array key "profile_pic" in /home1/uccessz3/public_html/support/apps/messenger/functions.php on line 222
+[07-Feb-2024 21:44:32 America/Boise] PHP Warning:  Undefined array key "profile_pic" in /home1/uccessz3/public_html/support/apps/messenger/functions.php on line 222
+[07-Feb-2024 22:44:16 America/Boise] PHP Fatal error:  Uncaught TypeError: count(): Argument #1 ($value) must be of type Countable|array, null given in /home1/uccessz3/public_html/support/apps/messenger/post.php:99
+Stack trace:
+#0 {main}
+  thrown in /home1/uccessz3/public_html/support/apps/messenger/post.php on line 99
+[07-Feb-2024 22:44:19 America/Boise] PHP Warning:  Undefined array key "profile_pic" in /home1/uccessz3/public_html/support/apps/messenger/functions.php on line 222
+[08-Feb-2024 12:40:13 America/Boise] PHP Warning:  Undefined array key "profile_pic" in /home1/uccessz3/public_html/support/apps/messenger/functions.php on line 222
+[09-Feb-2024 00:47:21 America/Boise] PHP Fatal error:  Uncaught TypeError: count(): Argument #1 ($value) must be of type Countable|array, null given in /home1/uccessz3/public_html/support/apps/messenger/post.php:99
+Stack trace:
+#0 {main}
+  thrown in /home1/uccessz3/public_html/support/apps/messenger/post.php on line 99
+[10-Feb-2024 00:37:39 America/Boise] PHP Warning:  Undefined array key "profile_pic" in /home1/uccessz3/public_html/support/apps/messenger/functions.php on line 222
+[12-Feb-2024 01:12:36 America/Boise] PHP Warning:  Undefined array key "profile_pic" in /home1/uccessz3/public_html/support/apps/messenger/functions.php on line 222
+[12-Feb-2024 23:47:32 America/Boise] PHP Fatal error:  Uncaught TypeError: count(): Argument #1 ($value) must be of type Countable|array, null given in /home1/uccessz3/public_html/support/apps/messenger/post.php:99
+Stack trace:
+#0 {main}
+  thrown in /home1/uccessz3/public_html/support/apps/messenger/post.php on line 99
+[15-Feb-2024 01:26:59 America/Boise] PHP Fatal error:  Uncaught TypeError: count(): Argument #1 ($value) must be of type Countable|array, null given in /home1/uccessz3/public_html/support/apps/messenger/post.php:99
+Stack trace:
+#0 {main}
+  thrown in /home1/uccessz3/public_html/support/apps/messenger/post.php on line 99
+[15-Feb-2024 01:27:01 America/Boise] PHP Warning:  Undefined array key "profile_pic" in /home1/uccessz3/public_html/support/apps/messenger/functions.php on line 222
+[15-Feb-2024 01:27:01 America/Boise] PHP Warning:  Undefined array key "profile_pic" in /home1/uccessz3/public_html/support/apps/messenger/functions.php on line 222
+[15-Feb-2024 01:27:02 America/Boise] PHP Warning:  Undefined array key "profile_pic" in /home1/uccessz3/public_html/support/apps/messenger/functions.php on line 222
+[15-Feb-2024 01:27:02 America/Boise] PHP Warning:  mime_content_type(/home1/uccessz3/public_html/support/uploads/15-02-24/ig_messaging_cdn): Failed to open stream: No such file or directory in /home1/uccessz3/public_html/support/include/functions.php on line 1268
+[15-Feb-2024 01:27:02 America/Boise] PHP Warning:  rename(/home1/uccessz3/public_html/support/uploads/15-02-24/ig_messaging_cdn,/home1/uccessz3/public_html/support/uploads/15-02-24/308832814): No such file or directory in /home1/uccessz3/public_html/support/include/functions.php on line 1277
+[15-Feb-2024 01:27:03 America/Boise] PHP Warning:  rename(/home1/uccessz3/public_html/support/uploads/15-02-24/ig_messaging_cdn,/home1/uccessz3/public_html/support/uploads/15-02-24/308832814): No such file or directory in /home1/uccessz3/public_html/support/include/functions.php on line 1277
+[17-Feb-2024 23:37:22 America/Boise] PHP Warning:  Undefined array key "profile_pic" in /home1/uccessz3/public_html/support/apps/messenger/functions.php on line 222
+[19-Feb-2024 23:27:58 America/Boise] PHP Fatal error:  Uncaught TypeError: count(): Argument #1 ($value) must be of type Countable|array, null given in /home1/uccessz3/public_html/support/apps/messenger/post.php:99
+Stack trace:
+#0 {main}
+  thrown in /home1/uccessz3/public_html/support/apps/messenger/post.php on line 99

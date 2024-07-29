@@ -50,7 +50,7 @@ if(!empty($_POST))
                 if($existingConversation){
                     $response = ['status' => 200, 'message' => 'success', 'user_id' => $userId, 'conversation_url' => 'https://supportboard.test/admin.php?conversation='.$existingConversation ];
                 }else{
-                    $conversationId = sb_new_conversation($userId);
+                    $conversationId = sb_new_conversation($userId, 3);
                     $response = ['status' => 200, 'message' => 'success', 'user_id' => $userId, 'conversation_url' => 'https://supportboard.test/admin.php?conversation='.$conversationId['details']['id'], 'conversation_details' => $conversationId['details'] ];
                 }
             }

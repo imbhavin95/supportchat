@@ -27,7 +27,7 @@ define('SB_DB_HOST', '127.0.0.1');
 /* MySQL port (optional) */
 define('SB_DB_PORT', '');
 define('SB_CROSS_DOMAIN', true);
-define('SB_DIALOGFLOW', true);
+// define('SB_DIALOGFLOW', true);
 // define('SB_CLOUD', true);
 // define('SB_CLOUD_PATH', 'include/functions.php')
 
