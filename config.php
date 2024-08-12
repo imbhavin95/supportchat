@@ -10,7 +10,7 @@
  */
 
 /* Plugin folder url */
-define('SB_URL', 'https://supportboard.test');
+define('SB_URL', 'https://successinsurance.test');
 
 /* The name of the database */
 define('SB_DB_NAME', 'support_board');

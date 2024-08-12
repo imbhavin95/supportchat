@@ -206,9 +206,9 @@ function sb_get_conversation($user_id = false, $conversation_id = false) {
                     $is_routing = sb_get_setting('routing');
                     $is_hide_conversations = sb_get_multi_setting('agent-hide-conversations', 'agent-hide-conversations-active');
                     $is_show_unassigned_conversations = sb_get_multi_setting('agent-hide-conversations', 'agent-hide-conversations-view');
-                    if ($active_user['user_type'] == 'agent' && ((!empty($active_user['department']) && $active_user['department'] != $details['department']) || ($is_hide_conversations && !$is_show_unassigned_conversations && empty($details['agent_id'])) || (!empty($details['agent_id']) && $active_user['id'] != $details['agent_id'] && ($is_queue || $is_routing || $is_hide_conversations)))) {
-                        return 'agent-not-authorized';
-                    }
+//                    if ($active_user['user_type'] == 'agent' && ((!empty($active_user['department']) && $active_user['department'] != $details['department']) || ($is_hide_conversations && !$is_show_unassigned_conversations && empty($details['agent_id'])) || (!empty($details['agent_id']) && $active_user['id'] != $details['agent_id'] && ($is_queue || $is_routing || $is_hide_conversations)))) {
+//                        return 'agent-not-authorized';
+//                    }
                     if ($is_show_unassigned_conversations || (!$is_queue && !$is_routing && !$is_hide_conversations)) {
                         $agent_id = sb_is_active_conversation_busy($conversation_id, sb_get_active_user_ID());
                         if ($agent_id) {
@@ -312,10 +312,10 @@ function sb_update_conversation_department($conversation_id, $department, $messa
     return sb_error('department-update-error', 'sb_update_conversation_department', $response);
 }
 
-function sb_update_conversation_agent($conversation_id, $agent_id, $message = false) {
-    if (sb_conversation_security_error($conversation_id)) {
-        return sb_error('security-error', 'sb_update_conversation_agent');
-    }
+function sb_update_conversation_agent($conversation_id, $agent_id, $message = false, $agentUpdateAlert = true) {
+//    if (sb_conversation_security_error($conversation_id)) {
+//        return sb_error('security-error', 'sb_update_conversation_agent');
+//    }
     $conversation_id = sb_db_escape($conversation_id, true);
     if ($agent_id == 'routing' || $agent_id == 'routing-unassigned') {
         $agent_id = sb_routing(false, sb_isset(sb_db_get('SELECT department FROM sb_conversations WHERE id = ' . $conversation_id), 'department'), $agent_id == 'routing-unassigned');
@@ -329,7 +329,7 @@ function sb_update_conversation_agent($conversation_id, $agent_id, $message = fa
         if ($message) {
             sb_send_agents_notifications($message, $empty_agent_id ? '' : str_replace('{T}', sb_is_agent() ? sb_get_user_name() : sb_get_setting('bot-name', 'Chatbot'), sb_('This message has been sent because {T} assigned this conversation to you.')), $conversation_id, false, false, ['force' => true]);
         }
-        if (!$empty_agent_id) {
+        if (!$empty_agent_id && $agentUpdateAlert) {
             sb_update_conversation_event('conversation-agent-update-' . $agent_id, $conversation_id, $message);
         }
         if (sb_get_setting('logs')) {
